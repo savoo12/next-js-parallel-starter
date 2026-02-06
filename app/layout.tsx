@@ -1,20 +1,25 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const geist = Geist({
   subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Parallel + Vercel Template Demo",
-  description: "Interactive demo of Parallel's Search, Extract, and Tasks APIs",
+  title: "Parallel | What can I do for you?",
+  description:
+    "Search, extract, and run research tasks with Parallel. An intelligent agent that delivers finished work.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1A1A1A",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -25,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geist.className} ${geistMono.className} antialiased`}
       >
         {children}
       </body>
