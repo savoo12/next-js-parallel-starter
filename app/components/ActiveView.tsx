@@ -32,6 +32,7 @@ const PANEL_META: Record<
 export default function ActiveView({
   activePanel,
   prefillQuery,
+  onBack,
 }: ActiveViewProps) {
   if (activePanel === "idle") return null;
 
@@ -39,14 +40,35 @@ export default function ActiveView({
 
   return (
     <div className="w-full max-w-3xl">
-      {/* Panel header */}
-      <div className="mb-6">
-        <h2 className="font-sans text-2xl font-bold tracking-tight text-foreground">
-          {meta.title}
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {meta.description}
-        </p>
+      {/* Back + Panel header */}
+      <div className="mb-6 flex items-center gap-3">
+        <button
+          onClick={onBack}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Go back"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </button>
+        <div>
+          <h2 className="font-sans text-xl font-bold tracking-tight text-foreground">
+            {meta.title}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {meta.description}
+          </p>
+        </div>
       </div>
 
       {/* Panel content */}

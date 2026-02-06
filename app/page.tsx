@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Header from "./components/Header";
 import PromptInput from "./components/PromptInput";
 import SuggestionCards from "./components/SuggestionCards";
 import ActiveView from "./components/ActiveView";
@@ -33,8 +32,6 @@ export default function Home() {
       </div>
 
       <div className="relative z-10 flex min-h-screen flex-col">
-        <Header activePanel={activePanel} onBack={handleBack} />
-
         <main className="flex flex-1 flex-col items-center justify-center px-4 pb-12">
           {activePanel === "idle" ? (
             <div className="flex w-full max-w-3xl flex-col items-center gap-10">
@@ -42,17 +39,17 @@ export default function Home() {
               <div className="flex flex-col items-center gap-5">
                 <PixelText
                   text="What can I do for you?"
-                  pixelSize={5}
+                  pixelSize={6}
                   className="hidden md:flex"
                 />
                 <PixelText
                   text="What can I"
-                  pixelSize={5}
+                  pixelSize={6}
                   className="flex md:hidden"
                 />
                 <PixelText
                   text="do for you?"
-                  pixelSize={5}
+                  pixelSize={6}
                   className="flex md:hidden"
                 />
                 <p className="text-pretty text-center text-base text-muted-foreground md:text-lg">

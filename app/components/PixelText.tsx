@@ -268,8 +268,8 @@ export default function PixelText({
 
   useEffect(() => {
     // Build the pixel grid from text
-    const gap = 1; // gap between pixels
-    const charGap = 2; // gap between characters
+    const gap = 0; // no gap = bolder, more compact
+    const charGap = 1; // tighter character spacing
     const pixels: PixelState[] = [];
 
     let cursorX = 0;
