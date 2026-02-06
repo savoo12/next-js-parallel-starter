@@ -268,8 +268,8 @@ export default function PixelText({
 
   useEffect(() => {
     // Build the pixel grid from text
-    const gap = 0; // no gap = bolder, more compact
-    const charGap = 1; // tighter character spacing
+    const gap = 1; // spacing between dots for dot-matrix look
+    const charGap = 2; // spacing between characters
     const pixels: PixelState[] = [];
 
     let cursorX = 0;
@@ -339,8 +339,11 @@ export default function PixelText({
         }
 
         if (pixel.currentOpacity > 0.01) {
+          const radius = pixelSize / 2;
+          ctx.beginPath();
+          ctx.arc(pixel.x + radius, pixel.y + radius, radius, 0, Math.PI * 2);
           ctx.fillStyle = `rgba(26, 26, 26, ${pixel.currentOpacity})`;
-          ctx.fillRect(pixel.x, pixel.y, pixelSize, pixelSize);
+          ctx.fill();
         }
       }
 
@@ -349,9 +352,12 @@ export default function PixelText({
       } else {
         // Final clean render
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const radius = pixelSize / 2;
         for (const pixel of pixelsRef.current) {
+          ctx.beginPath();
+          ctx.arc(pixel.x + radius, pixel.y + radius, radius, 0, Math.PI * 2);
           ctx.fillStyle = "rgba(26, 26, 26, 1)";
-          ctx.fillRect(pixel.x, pixel.y, pixelSize, pixelSize);
+          ctx.fill();
         }
       }
     };
