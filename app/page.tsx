@@ -27,12 +27,13 @@ export default function Home() {
   return (
     <div className="relative flex min-h-screen flex-col bg-background font-sans">
       {/* Background image */}
-      <div className="pointer-events-none fixed inset-0 z-0">
+      <div className="pointer-events-none fixed inset-0 z-0 flex items-center justify-center">
         <Image
           src="/images/bg-horse.jpg"
           alt=""
-          fill
-          className="object-cover opacity-15"
+          width={800}
+          height={800}
+          className="max-h-[80vh] w-auto object-contain opacity-[0.08]"
           priority
         />
       </div>
