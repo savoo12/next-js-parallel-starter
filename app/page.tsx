@@ -5,8 +5,8 @@ import PromptInput from "./components/PromptInput";
 import SuggestionCards from "./components/SuggestionCards";
 import ActiveView from "./components/ActiveView";
 import Footer from "./components/Footer";
-import PixelGrid from "./components/PixelGrid";
 import PixelText from "./components/PixelText";
+import Image from "next/image";
 
 export type ActivePanel = "idle" | "search" | "extract" | "tasks";
 
@@ -26,9 +26,15 @@ export default function Home() {
 
   return (
     <div className="relative flex min-h-screen flex-col bg-background font-sans">
-      {/* Pixelated background animation */}
+      {/* Background image */}
       <div className="pointer-events-none fixed inset-0 z-0">
-        <PixelGrid />
+        <Image
+          src="/images/bg-horse.jpg"
+          alt=""
+          fill
+          className="object-cover opacity-15"
+          priority
+        />
       </div>
 
       <div className="relative z-10 flex min-h-screen flex-col">
