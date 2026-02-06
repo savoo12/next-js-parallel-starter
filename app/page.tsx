@@ -32,7 +32,7 @@ export default function Home() {
           <div className="flex w-full max-w-3xl flex-col items-center gap-10">
             {/* Hero */}
             <div className="text-center">
-              <h1 className="text-balance font-serif text-4xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
+              <h1 className="text-balance font-sans text-4xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
                 What can I do for you?
               </h1>
               <p className="mt-4 text-pretty text-base text-muted-foreground md:text-lg">

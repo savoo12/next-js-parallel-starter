@@ -34,8 +34,7 @@
   --color-destructive: var(--destructive);
   --color-ring: var(--ring);
   --radius: var(--radius);
-  --font-sans: 'DM Sans', 'DM Sans Fallback';
-  --font-serif: 'Libre Baskerville', 'Libre Baskerville Fallback';
+  --font-sans: 'Geist', 'Geist Fallback';
   --font-mono: 'Geist Mono', 'Geist Mono Fallback';
 }
 

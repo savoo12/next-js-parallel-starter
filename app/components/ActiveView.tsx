@@ -41,7 +41,7 @@ export default function ActiveView({
     <div className="w-full max-w-3xl">
       {/* Panel header */}
       <div className="mb-6">
-        <h2 className="font-serif text-2xl font-bold tracking-tight text-foreground">
+        <h2 className="font-sans text-2xl font-bold tracking-tight text-foreground">
           {meta.title}
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">

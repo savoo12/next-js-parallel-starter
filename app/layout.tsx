@@ -1,15 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Sans, Libre_Baskerville, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const dmSans = DM_Sans({
+const geist = Geist({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-});
-
-const libreBaskerville = Libre_Baskerville({
-  subsets: ["latin"],
-  weight: ["400", "700"],
 });
 
 const geistMono = Geist_Mono({
@@ -36,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${dmSans.className} ${libreBaskerville.className} ${geistMono.className} antialiased`}
+        className={`${geist.className} ${geistMono.className} antialiased`}
       >
         {children}
       </body>
