@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSessionStorage } from "@/hooks/useSessionStorage";
 
 interface ExtractResult {
@@ -29,13 +29,27 @@ const INITIAL_STATE: StoredExtractState = {
   error: null,
 };
 
-export default function ExtractDemo() {
+interface ExtractDemoProps {
+  prefillQuery?: string;
+}
+
+export default function ExtractDemo({ prefillQuery }: ExtractDemoProps) {
   const [storedState, setStoredState, clearStoredState, isHydrated] =
-    useSessionStorage<StoredExtractState>("parallel-extract-demo", INITIAL_STATE);
+    useSessionStorage<StoredExtractState>(
+      "parallel-extract-demo",
+      INITIAL_STATE
+    );
 
   const [loading, setLoading] = useState(false);
 
   const { urls, objective, results, error } = storedState;
+
+  // Apply prefill query
+  useEffect(() => {
+    if (prefillQuery && isHydrated && !urls) {
+      setStoredState((prev) => ({ ...prev, urls: prefillQuery }));
+    }
+  }, [prefillQuery, isHydrated, urls, setStoredState]);
 
   const setUrls = (value: string) =>
     setStoredState((prev) => ({ ...prev, urls: value }));
@@ -54,7 +68,6 @@ export default function ExtractDemo() {
 
     if (urlList.length === 0) return;
 
-    // Clear previous results when starting a new extraction
     setStoredState((prev) => ({ ...prev, results: [], error: null }));
     setLoading(true);
 
@@ -86,100 +99,110 @@ export default function ExtractDemo() {
     clearStoredState();
   };
 
-  // Don't render content until hydrated to avoid hydration mismatch
   if (!isHydrated) {
     return <div className="space-y-6" />;
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-4">
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label
-              htmlFor="urls"
-              className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
-            >
-              URLs to Extract (one per line)
-            </label>
-            <a
-              href="https://docs.parallel.ai/api-reference/extract-beta/extract"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-green-600 dark:text-green-400 hover:underline"
-            >
-              API Docs
-            </a>
-          </div>
-          <textarea
-            id="urls"
-            value={urls}
-            onChange={(e) => setUrls(e.target.value)}
-            placeholder="https://example.com/article&#10;https://another-site.com/page"
-            className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none font-mono text-sm"
-            rows={3}
-          />
-        </div>
-
-        <div>
+    <div className="space-y-5">
+      {/* URL input */}
+      <div>
+        <div className="mb-1.5 flex items-center justify-between">
           <label
-            htmlFor="extract-objective"
-            className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
+            htmlFor="urls"
+            className="text-sm font-medium text-foreground"
           >
-            Extraction Objective (optional)
+            URLs to Extract{" "}
+            <span className="font-normal text-muted-foreground">(one per line)</span>
           </label>
-          <input
-            id="extract-objective"
-            type="text"
-            value={objective}
-            onChange={(e) => setObjective(e.target.value)}
-            placeholder="What information are you looking for?"
-            className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            Providing an objective focuses the extraction on relevant content
-          </p>
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            onClick={handleExtract}
-            disabled={loading || !urls.trim()}
-            className="flex-1 py-3 px-4 bg-green-600 hover:bg-green-700 disabled:bg-zinc-400 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+          <a
+            href="https://docs.parallel.ai/api-reference/extract-beta/extract"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-accent transition-colors hover:underline"
           >
-            {loading ? "Extracting..." : "Extract Content"}
-          </button>
-          {(results.length > 0 || urls || objective) && (
-            <button
-              onClick={handleClear}
-              className="py-3 px-4 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-300 font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2"
-            >
-              Clear
-            </button>
-          )}
+            API Docs
+          </a>
         </div>
+        <textarea
+          id="urls"
+          value={urls}
+          onChange={(e) => setUrls(e.target.value)}
+          placeholder={"https://example.com/article\nhttps://another-site.com/page"}
+          className="w-full resize-none rounded-xl border border-input bg-background px-4 py-3 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/20"
+          rows={3}
+        />
       </div>
 
+      {/* Objective */}
+      <div>
+        <label
+          htmlFor="extract-objective"
+          className="mb-1.5 block text-sm font-medium text-foreground"
+        >
+          Extraction Objective{" "}
+          <span className="font-normal text-muted-foreground">(optional)</span>
+        </label>
+        <input
+          id="extract-objective"
+          type="text"
+          value={objective}
+          onChange={(e) => setObjective(e.target.value)}
+          placeholder="What information are you looking for?"
+          className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/20"
+        />
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          Providing an objective focuses the extraction on relevant content
+        </p>
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-3">
+        <button
+          onClick={handleExtract}
+          disabled={loading || !urls.trim()}
+          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-foreground py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+        >
+          {loading && (
+            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+          )}
+          {loading ? "Extracting..." : "Extract Content"}
+        </button>
+        {(results.length > 0 || urls || objective) && (
+          <button
+            onClick={handleClear}
+            className="rounded-xl border border-input bg-background px-5 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* Error */}
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400">
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
           {error}
         </div>
       )}
 
+      {/* Results */}
       {results.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-foreground">
             Extracted Content ({results.length})
           </h3>
           {results.map((result, index) => (
             <div
               key={index}
-              className="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800"
+              className="rounded-xl border border-border bg-background p-4 transition-colors hover:border-foreground/20"
             >
               <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   {result.title && (
-                    <h4 className="font-medium text-zinc-900 dark:text-zinc-100">
+                    <h4 className="text-sm font-semibold text-foreground">
                       {result.title}
                     </h4>
                   )}
@@ -187,7 +210,7 @@ export default function ExtractDemo() {
                     href={result.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-green-600 dark:text-green-400 hover:underline truncate block"
+                    className="mt-0.5 block truncate text-xs text-accent hover:underline"
                   >
                     {result.url}
                   </a>
@@ -195,14 +218,14 @@ export default function ExtractDemo() {
               </div>
 
               {result.excerpts && result.excerpts.length > 0 && (
-                <div className="mt-4 space-y-3">
-                  <h5 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    Excerpts:
+                <div className="mt-3 space-y-2">
+                  <h5 className="text-xs font-medium text-muted-foreground">
+                    Excerpts
                   </h5>
                   {result.excerpts.map((excerpt, i) => (
                     <div
                       key={i}
-                      className="text-sm text-zinc-600 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900 p-3 rounded border-l-2 border-green-400 whitespace-pre-wrap"
+                      className="whitespace-pre-wrap rounded-lg border-l-2 border-foreground/20 bg-muted p-3 text-xs leading-relaxed text-muted-foreground"
                     >
                       {excerpt}
                     </div>
@@ -211,11 +234,11 @@ export default function ExtractDemo() {
               )}
 
               {result.full_content && (
-                <div className="mt-4">
-                  <h5 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                    Full Content:
+                <div className="mt-3">
+                  <h5 className="mb-2 text-xs font-medium text-muted-foreground">
+                    Full Content
                   </h5>
-                  <div className="text-sm text-zinc-600 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900 p-3 rounded max-h-64 overflow-y-auto whitespace-pre-wrap">
+                  <div className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg bg-muted p-3 text-xs leading-relaxed text-muted-foreground">
                     {result.full_content}
                   </div>
                 </div>

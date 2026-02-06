@@ -29,23 +29,20 @@ interface StoredTask {
 const STORAGE_KEY = "parallel-tasks-demo";
 
 const PROCESSORS = [
-  { value: "lite", label: "Lite", description: "$5/1000 runs, fastest" },
-  { value: "base", label: "Base", description: "$10/1000 runs, reliable" },
-  { value: "core", label: "Core", description: "$25/1000 runs, thorough" },
-  { value: "pro", label: "Pro", description: "$100/1000 runs, deep research" },
-  { value: "ultra", label: "Ultra", description: "$300/1000 runs, comprehensive" },
+  { value: "lite", label: "Lite", description: "$5/1000 runs" },
+  { value: "base", label: "Base", description: "$10/1000 runs" },
+  { value: "core", label: "Core", description: "$25/1000 runs" },
+  { value: "pro", label: "Pro", description: "$100/1000 runs" },
+  { value: "ultra", label: "Ultra", description: "$300/1000 runs" },
 ];
 
-// Helper to safely access localStorage
 function getStoredTasks(): StoredTask[] {
   if (typeof window === "undefined") return [];
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
+    if (stored) return JSON.parse(stored);
   } catch {
-    // Ignore errors
+    // Ignore
   }
   return [];
 }
@@ -55,11 +52,11 @@ function saveTasksToStorage(tasks: StoredTask[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
   } catch {
-    // Ignore errors
+    // Ignore
   }
 }
 
-// Accordion component for collapsible sections
+// Collapsible accordion
 function Accordion({
   title,
   children,
@@ -76,33 +73,27 @@ function Accordion({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   const variantStyles = {
-    default: "border-zinc-200 dark:border-zinc-700",
-    success: "border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10",
-    error: "border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10",
-  };
-
-  const headerStyles = {
-    default: "hover:bg-zinc-50 dark:hover:bg-zinc-800",
-    success: "hover:bg-green-100/50 dark:hover:bg-green-900/20",
-    error: "hover:bg-red-100/50 dark:hover:bg-red-900/20",
+    default: "border-border",
+    success: "border-foreground/10 bg-muted/50",
+    error: "border-destructive/20 bg-destructive/5",
   };
 
   return (
-    <div className={`border rounded-lg overflow-hidden ${variantStyles[variant]}`}>
+    <div className={`overflow-hidden rounded-xl border ${variantStyles[variant]}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full px-4 py-3 flex items-center justify-between text-left transition-colors ${headerStyles[variant]}`}
+        className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-muted/50"
       >
         <div className="flex items-center gap-2">
           <svg
-            className={`w-4 h-4 transition-transform ${isOpen ? "rotate-90" : ""}`}
+            className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
-          <span className="font-medium text-zinc-900 dark:text-zinc-100">{title}</span>
+          <span className="text-sm font-medium text-foreground">{title}</span>
         </div>
         {badge}
       </button>
@@ -111,7 +102,11 @@ function Accordion({
   );
 }
 
-export default function TasksDemo() {
+interface TasksDemoProps {
+  prefillQuery?: string;
+}
+
+export default function TasksDemo({ prefillQuery }: TasksDemoProps) {
   const [input, setInput] = useState("");
   const [processor, setProcessor] = useState("lite");
   const [tasks, setTasks] = useState<StoredTask[]>([]);
@@ -119,26 +114,27 @@ export default function TasksDemo() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
-  
+
   const eventSourceRef = useRef<EventSource | null>(null);
   const eventsContainerRef = useRef<HTMLDivElement>(null);
   const tasksRef = useRef<StoredTask[]>(tasks);
 
-  // Keep tasksRef in sync
+  // Apply prefill
+  useEffect(() => {
+    if (prefillQuery && isHydrated && !input) {
+      setInput(prefillQuery);
+    }
+  }, [prefillQuery, isHydrated, input]);
+
   useEffect(() => {
     tasksRef.current = tasks;
   }, [tasks]);
 
-  // Check status of a task via API
   const checkTaskStatus = useCallback(async (runId: string) => {
     try {
       const response = await fetch(`/api/tasks/${runId}/status`);
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to check status");
-      }
-
+      if (!response.ok) throw new Error(data.error || "Failed to check status");
       return data;
     } catch (err) {
       console.error("Error checking task status:", err);
@@ -146,25 +142,17 @@ export default function TasksDemo() {
     }
   }, []);
 
-  // Load tasks from localStorage on mount and check pending task statuses
   useEffect(() => {
     const storedTasks = getStoredTasks();
     if (storedTasks.length > 0) {
       setTasks(storedTasks);
-
-      // Find any running tasks and check their status
       const runningTasks = storedTasks.filter((t) => t.status === "running");
-      
       if (runningTasks.length > 0) {
-        // Check status of all running tasks
         runningTasks.forEach(async (task) => {
           const statusData = await checkTaskStatus(task.taskRun.run_id);
-          
           if (statusData) {
             if (statusData.status === "completed") {
-              // Task completed while we were away
               const output = parseTaskOutput(statusData.output);
-
               setTasks((prev) =>
                 prev.map((t) =>
                   t.taskRun.run_id === task.taskRun.run_id
@@ -173,22 +161,15 @@ export default function TasksDemo() {
                 )
               );
             } else if (statusData.status === "failed") {
-              // Task failed while we were away
               setTasks((prev) =>
                 prev.map((t) =>
                   t.taskRun.run_id === task.taskRun.run_id
-                    ? {
-                        ...t,
-                        status: "failed" as const,
-                        error: statusData.error?.message || "Task failed",
-                      }
+                    ? { ...t, status: "failed" as const, error: statusData.error?.message || "Task failed" }
                     : t
                 )
               );
             } else if (statusData.status === "running" || statusData.status === "queued") {
-              // Task still running, start SSE stream
               setActiveTaskId(task.taskRun.run_id);
-              // We'll start the event stream after hydration
             }
           }
         });
@@ -197,106 +178,83 @@ export default function TasksDemo() {
     setIsHydrated(true);
   }, [checkTaskStatus]);
 
-  // Save tasks to localStorage whenever they change (after hydration)
   useEffect(() => {
-    if (isHydrated) {
-      saveTasksToStorage(tasks);
-    }
+    if (isHydrated) saveTasksToStorage(tasks);
   }, [tasks, isHydrated]);
 
-  // Auto-scroll events container
   useEffect(() => {
     if (eventsContainerRef.current) {
       eventsContainerRef.current.scrollTop = eventsContainerRef.current.scrollHeight;
     }
   }, [tasks, activeTaskId]);
 
-  // Cleanup event source on unmount
   useEffect(() => {
     return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
+      if (eventSourceRef.current) eventSourceRef.current.close();
     };
   }, []);
 
   const updateTask = useCallback((runId: string, updates: Partial<StoredTask>) => {
     setTasks((prev) =>
-      prev.map((t) =>
-        t.taskRun.run_id === runId ? { ...t, ...updates } : t
-      )
+      prev.map((t) => (t.taskRun.run_id === runId ? { ...t, ...updates } : t))
     );
   }, []);
 
   const addEventToTask = useCallback((runId: string, event: TaskEvent) => {
     setTasks((prev) =>
       prev.map((t) =>
-        t.taskRun.run_id === runId
-          ? { ...t, events: [...t.events, event] }
-          : t
+        t.taskRun.run_id === runId ? { ...t, events: [...t.events, event] } : t
       )
     );
   }, []);
 
-  const startEventStream = useCallback((runId: string) => {
-    // Close any existing connection
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-    }
+  const startEventStream = useCallback(
+    (runId: string) => {
+      if (eventSourceRef.current) eventSourceRef.current.close();
 
-    const eventSource = new EventSource(`/api/tasks/${runId}/events`);
-    eventSourceRef.current = eventSource;
+      const eventSource = new EventSource(`/api/tasks/${runId}/events`);
+      eventSourceRef.current = eventSource;
 
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-
-        // Add event to task
-        addEventToTask(runId, {
-          type: data.type || "unknown",
-          timestamp: new Date().toISOString(),
-          message: data.message || data.progress_message,
-          data,
-        });
-
-        // Check for completion - status is nested in run.status for task_run.state events
-        const status = data.run?.status || data.status;
-        
-        if (data.type === "task_run.state" && status === "completed") {
-          const output = parseTaskOutput(data.output);
-
-          updateTask(runId, {
-            status: "completed",
-            finalOutput: output,
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          addEventToTask(runId, {
+            type: data.type || "unknown",
+            timestamp: new Date().toISOString(),
+            message: data.message || data.progress_message,
+            data,
           });
 
-          eventSource.close();
-          eventSourceRef.current = null;
+          const status = data.run?.status || data.status;
+
+          if (data.type === "task_run.state" && status === "completed") {
+            const output = parseTaskOutput(data.output);
+            updateTask(runId, { status: "completed", finalOutput: output });
+            eventSource.close();
+            eventSourceRef.current = null;
+          }
+
+          if (data.type === "task_run.state" && status === "failed") {
+            updateTask(runId, {
+              status: "failed",
+              error: data.run?.error?.message || data.error?.message || "Task failed",
+            });
+            eventSource.close();
+            eventSourceRef.current = null;
+          }
+        } catch {
+          // Non-JSON event
         }
+      };
 
-        // Check for failure
-        if (data.type === "task_run.state" && status === "failed") {
-          updateTask(runId, {
-            status: "failed",
-            error: data.run?.error?.message || data.error?.message || "Task failed",
-          });
+      eventSource.onerror = () => {
+        eventSource.close();
+        eventSourceRef.current = null;
+      };
+    },
+    [addEventToTask, updateTask]
+  );
 
-          eventSource.close();
-          eventSourceRef.current = null;
-        }
-      } catch {
-        // Non-JSON event, ignore
-      }
-    };
-
-    eventSource.onerror = () => {
-      // SSE connection closed or errored
-      eventSource.close();
-      eventSourceRef.current = null;
-    };
-  }, [addEventToTask, updateTask]);
-
-  // Resume SSE stream for active running task after hydration
   useEffect(() => {
     if (isHydrated && activeTaskId) {
       const activeTask = tasks.find((t) => t.taskRun.run_id === activeTaskId);
@@ -308,11 +266,9 @@ export default function TasksDemo() {
 
   const handleCreateTask = async () => {
     if (!input.trim()) return;
-
     setLoading(true);
     setError(null);
 
-    // Close any existing event source
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
       eventSourceRef.current = null;
@@ -322,23 +278,16 @@ export default function TasksDemo() {
       const response = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          input: input.trim(),
-          processor,
-        }),
+        body: JSON.stringify({ input: input.trim(), processor }),
       });
-
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Task creation failed");
-      }
+      if (!response.ok) throw new Error(data.error || "Task creation failed");
 
       const newTask: StoredTask = {
         taskRun: {
           run_id: data.run_id,
           status: data.status,
-          processor: processor,
+          processor,
           input: input.trim(),
           createdAt: new Date().toISOString(),
         },
@@ -351,8 +300,6 @@ export default function TasksDemo() {
       setActiveTaskId(data.run_id);
       setInput("");
       setLoading(false);
-
-      // Start streaming events
       startEventStream(data.run_id);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -366,9 +313,7 @@ export default function TasksDemo() {
       eventSourceRef.current = null;
     }
     setTasks((prev) => prev.filter((t) => t.taskRun.run_id !== runId));
-    if (activeTaskId === runId) {
-      setActiveTaskId(null);
-    }
+    if (activeTaskId === runId) setActiveTaskId(null);
   };
 
   const clearAllTasks = () => {
@@ -383,85 +328,97 @@ export default function TasksDemo() {
   const activeTask = tasks.find((t) => t.taskRun.run_id === activeTaskId);
   const isStreaming = activeTask?.status === "running" && eventSourceRef.current !== null;
 
+  if (!isHydrated) {
+    return <div className="space-y-6" />;
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Input Form */}
-      <div className="space-y-4">
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label
-              htmlFor="task-input"
-              className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
-            >
-              Research Task
-            </label>
-            <a
-              href="https://docs.parallel.ai/api-reference/tasks-v1/create-task-run"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-orange-600 dark:text-orange-400 hover:underline"
-            >
-              API Docs
-            </a>
-          </div>
-          <textarea
-            id="task-input"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Describe your research task... (e.g., 'Research the top 5 AI companies and their latest product announcements')"
-            className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
-            rows={4}
-            disabled={loading || isStreaming}
-          />
-        </div>
-
-        <div>
+    <div className="space-y-5">
+      {/* Task input */}
+      <div>
+        <div className="mb-1.5 flex items-center justify-between">
           <label
-            htmlFor="processor"
-            className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1"
+            htmlFor="task-input"
+            className="text-sm font-medium text-foreground"
           >
-            Processor
+            Research Task
           </label>
-          <select
-            id="processor"
-            value={processor}
-            onChange={(e) => setProcessor(e.target.value)}
-            className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
-            disabled={loading || isStreaming}
+          <a
+            href="https://docs.parallel.ai/api-reference/tasks-v1/create-task-run"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-accent transition-colors hover:underline"
           >
-            {PROCESSORS.map((p) => (
-              <option key={p.value} value={p.value}>
-                {p.label} - {p.description}
-              </option>
-            ))}
-          </select>
+            API Docs
+          </a>
         </div>
-
-        <button
-          onClick={handleCreateTask}
-          disabled={loading || isStreaming || !input.trim()}
-          className="w-full py-3 px-4 bg-orange-600 hover:bg-orange-700 disabled:bg-zinc-400 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
-        >
-          {loading ? "Creating Task..." : isStreaming ? "Task Running..." : "Start Task"}
-        </button>
+        <textarea
+          id="task-input"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Describe your research task..."
+          className="w-full resize-none rounded-xl border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/20"
+          rows={4}
+          disabled={loading || isStreaming}
+        />
       </div>
 
+      {/* Processor selector */}
+      <div>
+        <label className="mb-2 block text-sm font-medium text-foreground">
+          Processor
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {PROCESSORS.map((p) => (
+            <button
+              key={p.value}
+              onClick={() => setProcessor(p.value)}
+              disabled={loading || isStreaming}
+              className={`rounded-xl border px-3 py-2 text-xs font-medium transition-all ${
+                processor === p.value
+                  ? "border-foreground bg-foreground text-primary-foreground"
+                  : "border-input bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground disabled:opacity-40"
+              }`}
+            >
+              {p.label}
+              <span className="ml-1 opacity-60">{p.description}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Submit */}
+      <button
+        onClick={handleCreateTask}
+        disabled={loading || isStreaming || !input.trim()}
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+      >
+        {(loading || isStreaming) && (
+          <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+        )}
+        {loading ? "Creating Task..." : isStreaming ? "Task Running..." : "Start Task"}
+      </button>
+
+      {/* Error */}
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400">
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
           {error}
         </div>
       )}
 
-      {/* Tasks List */}
+      {/* Task list */}
       {tasks.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+            <h3 className="text-sm font-semibold text-foreground">
               Tasks ({tasks.length})
             </h3>
             <button
               onClick={clearAllTasks}
-              className="text-sm text-red-600 dark:text-red-400 hover:underline"
+              className="text-xs text-destructive transition-colors hover:underline"
             >
               Clear All
             </button>
@@ -471,50 +428,53 @@ export default function TasksDemo() {
             {tasks.map((task) => (
               <div
                 key={task.taskRun.run_id}
-                className={`border rounded-lg overflow-hidden ${
+                className={`overflow-hidden rounded-xl border transition-colors ${
                   task.status === "running"
-                    ? "border-orange-300 dark:border-orange-700"
+                    ? "border-accent/40"
                     : task.status === "completed"
-                    ? "border-green-300 dark:border-green-700"
-                    : "border-red-300 dark:border-red-700"
+                    ? "border-foreground/10"
+                    : "border-destructive/30"
                 }`}
               >
-                {/* Task Header */}
-                <div className="p-4 bg-white dark:bg-zinc-800">
+                {/* Task header */}
+                <div className="bg-card p-4">
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-zinc-900 dark:text-zinc-100 line-clamp-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-2 text-sm text-foreground">
                         {task.taskRun.input}
                       </p>
-                      <div className="flex items-center gap-3 mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                      <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
                         <span className="font-mono">{task.taskRun.run_id.slice(0, 8)}...</span>
-                        <span>{task.taskRun.processor}</span>
+                        <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium">
+                          {task.taskRun.processor}
+                        </span>
                         <span>{new Date(task.taskRun.createdAt).toLocaleString()}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       {task.status === "running" && (
-                        <span className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded">
-                          <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse" />
+                        <span className="flex items-center gap-1.5 rounded-lg bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent">
+                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
                           Running
                         </span>
                       )}
                       {task.status === "completed" && (
-                        <span className="px-2 py-1 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">
+                        <span className="rounded-lg bg-foreground/5 px-2.5 py-1 text-xs font-medium text-foreground">
                           Completed
                         </span>
                       )}
                       {task.status === "failed" && (
-                        <span className="px-2 py-1 text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded">
+                        <span className="rounded-lg bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive">
                           Failed
                         </span>
                       )}
                       <button
                         onClick={() => deleteTask(task.taskRun.run_id)}
-                        className="p-1 text-zinc-400 hover:text-red-500 transition-colors"
+                        className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
                         title="Delete task"
+                        aria-label="Delete task"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
@@ -522,14 +482,13 @@ export default function TasksDemo() {
                   </div>
                 </div>
 
-                {/* Accordions for Events and Output */}
-                <div className="border-t border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 p-3 space-y-2">
-                  {/* Events Accordion */}
+                {/* Accordions */}
+                <div className="space-y-2 border-t border-border bg-muted/30 p-3">
                   {task.events.length > 0 && (
                     <Accordion
                       title="Events"
                       badge={
-                        <span className="px-2 py-0.5 text-xs bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 rounded">
+                        <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                           {task.events.length}
                         </span>
                       }
@@ -537,25 +496,27 @@ export default function TasksDemo() {
                     >
                       <div
                         ref={task.taskRun.run_id === activeTaskId ? eventsContainerRef : undefined}
-                        className="max-h-48 overflow-y-auto space-y-2 mt-2"
+                        className="mt-2 max-h-48 space-y-2 overflow-y-auto"
                       >
                         {task.events.map((event, index) => (
                           <div
                             key={index}
-                            className="text-sm p-2 bg-white dark:bg-zinc-800 rounded border border-zinc-200 dark:border-zinc-700"
+                            className="rounded-lg border border-border bg-card p-2.5 text-sm"
                           >
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="px-1.5 py-0.5 text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded">
+                            <div className="mb-1 flex items-center gap-2">
+                              <span className="rounded-md bg-accent/10 px-1.5 py-0.5 text-xs font-medium text-accent">
                                 {event.type}
                               </span>
                               {event.timestamp && (
-                                <span className="text-xs text-zinc-400">
+                                <span className="text-xs text-muted-foreground">
                                   {new Date(event.timestamp).toLocaleTimeString()}
                                 </span>
                               )}
                             </div>
                             {event.message && (
-                              <p className="text-zinc-600 dark:text-zinc-300">{event.message}</p>
+                              <p className="text-xs leading-relaxed text-muted-foreground">
+                                {event.message}
+                              </p>
                             )}
                           </div>
                         ))}
@@ -563,30 +524,25 @@ export default function TasksDemo() {
                     </Accordion>
                   )}
 
-                  {/* Output Accordion */}
                   {task.finalOutput && (
-                    <Accordion
-                      title="Output"
-                      variant="success"
-                      defaultOpen={true}
+                    <Accordion title="Output" variant="success" defaultOpen={true}
                       badge={
-                        <span className="px-2 py-0.5 text-xs bg-green-200 dark:bg-green-800 text-green-700 dark:text-green-300 rounded">
+                        <span className="rounded-md bg-foreground/5 px-2 py-0.5 text-xs font-medium text-foreground">
                           Ready
                         </span>
                       }
                     >
                       <div className="mt-2 max-h-96 overflow-y-auto">
-                        <pre className="text-sm text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap bg-white dark:bg-zinc-800 p-3 rounded border border-green-200 dark:border-green-800">
+                        <pre className="whitespace-pre-wrap rounded-lg border border-border bg-card p-3 text-xs leading-relaxed text-foreground">
                           {task.finalOutput}
                         </pre>
                       </div>
                     </Accordion>
                   )}
 
-                  {/* Error Accordion */}
                   {task.error && (
                     <Accordion title="Error" variant="error" defaultOpen={true}>
-                      <p className="mt-2 text-sm text-red-700 dark:text-red-400">{task.error}</p>
+                      <p className="mt-2 text-sm text-destructive">{task.error}</p>
                     </Accordion>
                   )}
                 </div>
@@ -597,9 +553,13 @@ export default function TasksDemo() {
       )}
 
       {tasks.length === 0 && (
-        <div className="text-center py-8 text-zinc-500 dark:text-zinc-400">
-          <p>No tasks yet. Start a research task above!</p>
-          <p className="text-sm mt-1">Tasks are saved locally and persist across page refreshes.</p>
+        <div className="py-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            No tasks yet. Start a research task above.
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Tasks are saved locally and persist across page refreshes.
+          </p>
         </div>
       )}
     </div>
