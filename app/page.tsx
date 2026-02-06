@@ -32,7 +32,7 @@ export default function Home() {
       </div>
 
       <div className="relative z-10 flex min-h-screen flex-col">
-        <main className="flex flex-1 flex-col items-center justify-center px-4 pb-12">
+        <main className="flex flex-1 flex-col items-center justify-center px-4 pt-16 pb-24 md:pt-24">
           {activePanel === "idle" ? (
             <div className="flex w-full max-w-3xl flex-col items-center gap-10">
               {/* Animated pixel heading */}
