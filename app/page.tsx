@@ -6,6 +6,8 @@ import PromptInput from "./components/PromptInput";
 import SuggestionCards from "./components/SuggestionCards";
 import ActiveView from "./components/ActiveView";
 import Footer from "./components/Footer";
+import PixelGrid from "./components/PixelGrid";
+import PixelText from "./components/PixelText";
 
 export type ActivePanel = "idle" | "search" | "extract" | "tasks";
 
@@ -24,41 +26,60 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background font-sans">
-      <Header activePanel={activePanel} onBack={handleBack} />
+    <div className="relative flex min-h-screen flex-col bg-background font-sans">
+      {/* Pixelated background animation */}
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <PixelGrid />
+      </div>
 
-      <main className="flex flex-1 flex-col items-center justify-center px-4 pb-12">
-        {activePanel === "idle" ? (
-          <div className="flex w-full max-w-3xl flex-col items-center gap-10">
-            {/* Hero */}
-            <div className="text-center">
-              <h1 className="text-balance font-sans text-4xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
-                What can I do for you?
-              </h1>
-              <p className="mt-4 text-pretty text-base text-muted-foreground md:text-lg">
-                Search the web, extract content, or run deep research tasks.
-              </p>
+      <div className="relative z-10 flex min-h-screen flex-col">
+        <Header activePanel={activePanel} onBack={handleBack} />
+
+        <main className="flex flex-1 flex-col items-center justify-center px-4 pb-12">
+          {activePanel === "idle" ? (
+            <div className="flex w-full max-w-3xl flex-col items-center gap-10">
+              {/* Animated pixel heading */}
+              <div className="flex flex-col items-center gap-5">
+                <PixelText
+                  text="What can I do for you?"
+                  pixelSize={5}
+                  className="hidden md:flex"
+                />
+                <PixelText
+                  text="What can I"
+                  pixelSize={5}
+                  className="flex md:hidden"
+                />
+                <PixelText
+                  text="do for you?"
+                  pixelSize={5}
+                  className="flex md:hidden"
+                />
+                <p className="text-pretty text-center text-base text-muted-foreground md:text-lg">
+                  Search the web, extract content, or run deep research tasks.
+                </p>
+              </div>
+
+              {/* Prompt Input */}
+              <PromptInput
+                onSubmit={(panel) => setActivePanel(panel)}
+                onPanelSelect={(panel) => setActivePanel(panel)}
+              />
+
+              {/* Suggestion Cards */}
+              <SuggestionCards onCardClick={handleSuggestionClick} />
             </div>
-
-            {/* Prompt Input */}
-            <PromptInput
-              onSubmit={(panel) => setActivePanel(panel)}
-              onPanelSelect={(panel) => setActivePanel(panel)}
+          ) : (
+            <ActiveView
+              activePanel={activePanel}
+              prefillQuery={prefillQuery}
+              onBack={handleBack}
             />
+          )}
+        </main>
 
-            {/* Suggestion Cards */}
-            <SuggestionCards onCardClick={handleSuggestionClick} />
-          </div>
-        ) : (
-          <ActiveView
-            activePanel={activePanel}
-            prefillQuery={prefillQuery}
-            onBack={handleBack}
-          />
-        )}
-      </main>
-
-      <Footer />
+        <Footer />
+      </div>
     </div>
   );
 }

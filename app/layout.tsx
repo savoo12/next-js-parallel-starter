@@ -11,9 +11,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Parallel AI | What can I do for you?",
+  title: "Parallel | What can I do for you?",
   description:
-    "Search, extract, and run research tasks with Parallel AI. An intelligent agent that delivers finished work, not just answers.",
+    "Search, extract, and run research tasks with Parallel. An intelligent agent that delivers finished work.",
 };
 
 export const viewport: Viewport = {

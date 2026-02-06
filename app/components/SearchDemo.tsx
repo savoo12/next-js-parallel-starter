@@ -38,7 +38,7 @@ interface SearchDemoProps {
 
 export default function SearchDemo({ prefillQuery }: SearchDemoProps) {
   const [storedState, setStoredState, clearStoredState, isHydrated] =
-    useSessionStorage<StoredSearchState>("parallel-search-demo", INITIAL_STATE);
+    useSessionStorage<StoredSearchState>("parallel-search", INITIAL_STATE);
 
   const [loading, setLoading] = useState(false);
 
@@ -116,14 +116,7 @@ export default function SearchDemo({ prefillQuery }: SearchDemoProps) {
           >
             Search Objective
           </label>
-          <a
-            href="https://docs.parallel.ai/api-reference/search-beta/search"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-accent transition-colors hover:underline"
-          >
-            API Docs
-          </a>
+          <span className="text-xs text-muted-foreground">Powered by Parallel</span>
         </div>
         <textarea
           id="objective"

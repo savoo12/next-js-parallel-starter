@@ -26,7 +26,7 @@ interface StoredTask {
   error?: string;
 }
 
-const STORAGE_KEY = "parallel-tasks-demo";
+const STORAGE_KEY = "parallel-tasks";
 
 const PROCESSORS = [
   { value: "lite", label: "Lite", description: "$5/1000 runs" },
@@ -343,14 +343,7 @@ export default function TasksDemo({ prefillQuery }: TasksDemoProps) {
           >
             Research Task
           </label>
-          <a
-            href="https://docs.parallel.ai/api-reference/tasks-v1/create-task-run"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-accent transition-colors hover:underline"
-          >
-            API Docs
-          </a>
+          <span className="text-xs text-muted-foreground">Powered by Parallel</span>
         </div>
         <textarea
           id="task-input"

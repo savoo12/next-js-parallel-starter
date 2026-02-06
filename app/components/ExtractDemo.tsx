@@ -36,7 +36,7 @@ interface ExtractDemoProps {
 export default function ExtractDemo({ prefillQuery }: ExtractDemoProps) {
   const [storedState, setStoredState, clearStoredState, isHydrated] =
     useSessionStorage<StoredExtractState>(
-      "parallel-extract-demo",
+      "parallel-extract",
       INITIAL_STATE
     );
 
@@ -115,14 +115,7 @@ export default function ExtractDemo({ prefillQuery }: ExtractDemoProps) {
             URLs to Extract{" "}
             <span className="font-normal text-muted-foreground">(one per line)</span>
           </label>
-          <a
-            href="https://docs.parallel.ai/api-reference/extract-beta/extract"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-accent transition-colors hover:underline"
-          >
-            API Docs
-          </a>
+          <span className="text-xs text-muted-foreground">Powered by Parallel</span>
         </div>
         <textarea
           id="urls"

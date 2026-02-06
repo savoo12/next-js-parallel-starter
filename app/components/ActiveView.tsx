@@ -17,15 +17,15 @@ const PANEL_META: Record<
 > = {
   search: {
     title: "Search",
-    description: "Search the web with natural language objectives",
+    description: "Search the web with natural language",
   },
   extract: {
     title: "Extract",
-    description: "Extract structured content from any URL",
+    description: "Pull structured content from any URL",
   },
   tasks: {
     title: "Tasks",
-    description: "Run deep research tasks with real-time updates",
+    description: "Run deep research with real-time progress",
   },
 };
 
